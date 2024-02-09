@@ -10,7 +10,7 @@
 %
 % function syntax:
 %
-%     Lfut = ConstrainedBackEulOperatorConstruct(DiffCoeff,dt,val)
+%     [Lfut,bndterms] = ConstrainedBackEulOperatorConstruct(DiffCoeff,dt,val)
 %
 %
 %     inputs:
@@ -24,9 +24,13 @@
 %           step. This one will be inverted to solve for the new values.
 %           (The first and last entries of the Ncell + 2 blocks are related 
 %           to ghost cells and bounary condtions). 
+%         bndterms is the entry vector which is an approximation of the ion
+%           exchanger model terms "evaluate" at the future time step. This 
+%           will need to be added to the right hand side vector to take a
+%           time step.
 
 
-function Lfut = ConstrainedBackEulOperatorConstruct(DiffCoeff,dt,val)
+function [Lfut,bndterms] = ConstrainedBackEulOperatorConstruct(DiffCoeff,dt,val)
 
 %Lets 'import' the two big global structs
 global GelState GelSimParams
@@ -42,10 +46,14 @@ D = DiffCoeff;
 
 
 %First, lets get the SBD2 Time Step operators for each species
-Lfut1 = BackEulOperatorConstruct(D(1),dt,-GelSimParams.HydExchangeRate*GelSimParams.HydExchangerParam);
-Lfut2 = BackEulOperatorConstruct(D(2),dt,-GelSimParams.BicExchangeRate*GelSimParams.BicExchangerParam);
-Lfut3 = BackEulOperatorConstruct(D(3),dt,-GelSimParams.HydExchangeRate);
-Lfut4 = BackEulOperatorConstruct(D(4),dt,-GelSimParams.BicExchangeRate);
+Lfut1 = BackEulOperatorConstruct(D(1),dt,0);
+%  -GelSimParams.HydExchangeRate*GelSimParams.HydExchangerParam
+Lfut2 = BackEulOperatorConstruct(D(2),dt,0);
+% -GelSimParams.BicExchangeRate*GelSimParams.BicExchangerParam
+Lfut3 = BackEulOperatorConstruct(D(3),dt,0);
+% -GelSimParams.HydExchangeRate
+Lfut4 = BackEulOperatorConstruct(D(4),dt,0);
+% -GelSimParams.BicExchangeRate
 
 %Now we'll construct the first diff. operators which act on the electric 
 %potential
@@ -53,7 +61,7 @@ Lfut4 = BackEulOperatorConstruct(D(4),dt,-GelSimParams.BicExchangeRate);
 %First, the action of electric potential on hydrogen
 %Operator requires an approx of future concentration
 FutConcExtrap = 2*GelState.Hconc - GelState.Hold; %Heres an extrap to next time step
-
+HydBndFut = mean(FutConcExtrap(1:2)); %This will be necessary for ion exchanger evaluation
 
 %Lets set asside the diagonal of the new operator that takes care of the
 %buffering reaction implicitly. 
@@ -82,6 +90,7 @@ Dfut1(end,:) = Dfut1(end,:)*mean(GelState.ThetaS(end-1:end));
 %Now on species two
 %Operator requires an approx of future concentration
 FutConcExtrap = 2*GelState.Bconc - GelState.Bold; %Heres an extrap to next time step
+BicBndFut = mean(FutConcExtrap(1:2)); %This will be necessary for ion exchanger evaluation
 
 %Lets set asside the diagonal of the new operator that takes care of the
 %buffering reaction implicitly. 
@@ -109,6 +118,7 @@ Dfut2(end,:) = Dfut2(end,:)*mean(GelState.ThetaS(end-1:end));
 %Now on species three
 %Operator requires an approx of future concentration
 FutConcExtrap = 2*GelState.Iconc - GelState.Iold; %Heres an extrap to next time step
+IonBndFut = mean(FutConcExtrap(1:2)); %This will be necessary for ion exchanger evaluation
 
 %Now we interpolate the concentration times valence times volume fraction
 %to cell edges
@@ -129,6 +139,7 @@ Dfut3(end,:) = Dfut3(end,:)*mean(GelState.ThetaS(end-1:end));
 %Now species four
 %Operator requires an approx of future concentration
 FutConcExtrap = 2*GelState.Aconc - GelState.Aold; %Heres an extrap to next time step
+AniBndFut = mean(FutConcExtrap(1:2)); %This will be necessary for ion exchanger evaluation
 
 %Now we interpolate the concentration times valence times volume fraction
 %to cell edges
@@ -168,15 +179,17 @@ BtoA = A;
 AtoB = A;
 
 %These are the terms that couple counter-ions through boundary equations
-HtoI(1,1:2) = -GelSimParams.SolValL*GelSimParams.HydExchangeRate/2; 
-ItoH(1,1:2) = -GelSimParams.SolValL*GelSimParams.HydExchangeRate*GelSimParams.HydExchangerParam/2;
-BtoA(1,1:2) = -GelSimParams.SolValL*GelSimParams.BicExchangeRate/2;
-AtoB(1,1:2) = -GelSimParams.SolValL*GelSimParams.BicExchangeRate*GelSimParams.BicExchangerParam/2;
+% HtoI(1,1:2) = -GelSimParams.SolValL*GelSimParams.HydExchangeRate/2; 
+% ItoH(1,1:2) = -GelSimParams.SolValL*GelSimParams.HydExchangeRate*GelSimParams.HydExchangerParam/2;
+% BtoA(1,1:2) = -GelSimParams.SolValL*GelSimParams.BicExchangeRate/2;
+% AtoB(1,1:2) = -GelSimParams.SolValL*GelSimParams.BicExchangeRate*GelSimParams.BicExchangerParam/2;
 % keyboard
 
 
-Lfut = [Lfut1+HydAdj,A,HtoI,A,Dfut1;A,Lfut2+BicAdj,A,BtoA,Dfut2;ItoH,A,Lfut3,A,Dfut3;A,AtoB,A,Lfut4,Dfut4;Eye1,Eye2,Eye3,Eye4,B];
-
+Lfut = [Lfut1+HydAdj,A,A,A,Dfut1;A,Lfut2+BicAdj,A,A,Dfut2;A,A,Lfut3,A,Dfut3;A,A,A,Lfut4,Dfut4;Eye1,Eye2,Eye3,Eye4,B];
+bndterms = [GelSimParams.HydExchangeRate*GelSimParams.HydExchangerParam*HydBndFut;...
+            GelSimParams.BicExchangeRate*GelSimParams.BicExchangerParam*BicBndFut;...
+            GelSimParams.HydExchangeRate*IonBndFut;GelSimParams.BicExchangeRate*AniBndFut];
 
 
 end

@@ -24,10 +24,21 @@ dt = GelSimParams.dt;
 %The current solvent velocity field
 SolVeloc = GelState.USol;
 
+
+%Lets make the time-step operator
+val = [1,-1,1,-1];
+%The Diffusion Coefficients
+D(1) = GelSimParams.Dh;
+D(2) = GelSimParams.Db;
+D(3) = GelSimParams.Di;
+D(4) = GelSimParams.Da;
+
+
+[L,bndterms] = ConstrainedBackEulOperatorConstruct(D,dt,val);
+
 %First, we will get ready to update the Hydrogen concentration
 
-%The Diffusion Coefficient
-D(1) = GelSimParams.Dh;
+
 %And finally the current concentration
 conccur = GelState.Hconc;
 
@@ -46,7 +57,7 @@ RHSH(2:end-1) = conccur(2:end-1) + dt*explcur;
     
 %Now we need to populate the entries which correspond to ghost cells with
 %the appropriate fluxes for Boundary Conditions.
-RHSH(1) = GelSimParams.HydFluxL;
+RHSH(1) = GelSimParams.HydFluxL + bndterms(1);
 RHSH(end) = GelSimParams.HydValR;
 
 
@@ -54,8 +65,6 @@ RHSH(end) = GelSimParams.HydValR;
 
 %Now we'll get ready to update the Bicarbonate Concentration
 
-%The Diffusion Coefficient
-D(2) = GelSimParams.Db;
 %And finally the current concentration
 conccur = GelState.Bconc;
 
@@ -74,7 +83,7 @@ RHSB(2:end-1) = conccur(2:end-1) + dt*explcur;
     
 %Now we need to populate the entries which correspond to ghost cells with
 %the appropriate fluxes for Boundary Conditions.
-RHSB(1) = GelSimParams.BicFluxL;
+RHSB(1) = GelSimParams.BicFluxL + bndterms(2);
 RHSB(end) = GelSimParams.BicValR;
 
 
@@ -82,8 +91,6 @@ RHSB(end) = GelSimParams.BicValR;
 
 %Now we'll update the (negatively charged) ionic Concentration
 
-%The Diffusion Coefficient
-D(3) = GelSimParams.Di;
 %And finally the current concentration
 conccur = GelState.Iconc;
 
@@ -102,7 +109,7 @@ RHSI(2:end-1) = conccur(2:end-1) + dt*explcur;
 
 %Now we need to populate the entries which correspond to ghost cells with
 %the appropriate fluxes for Boundary Conditions.
-RHSI(1) = GelSimParams.IonFluxL;
+RHSI(1) = GelSimParams.IonFluxL + bndterms(3);
 RHSI(end) = GelSimParams.IonValR;
 
 
@@ -110,8 +117,7 @@ RHSI(end) = GelSimParams.IonValR;
 
 %Now we'll update the (positively charged) anion Concentration
 
-%The Diffusion Coefficient
-D(4) = GelSimParams.Da;
+
 %And finally the current and 'old' concentrations
 conccur = GelState.Aconc;
 
@@ -130,13 +136,9 @@ RHSA(2:end-1) = conccur(2:end-1) + dt*explcur;
 
 %Now we need to populate the entries which correspond to ghost cells with
 %the appropriate fluxes for Boundary Conditions.
-RHSA(1) = GelSimParams.AniFluxL;
+RHSA(1) = GelSimParams.AniFluxL + bndterms(4);
 RHSA(end) = GelSimParams.AniValR;
 
-
-val = [1,-1,1,-1];
-
-L = ConstrainedBackEulOperatorConstruct(D,dt,val);
 
 RHS = [RHSH;RHSB;RHSI;RHSA;zeros(GelSimParams.Ncell+1,1)];
 
