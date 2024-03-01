@@ -57,7 +57,7 @@ RHSH(2:end-1) = conccur(2:end-1) + dt*explcur;
     
 %Now we need to populate the entries which correspond to ghost cells with
 %the appropriate fluxes for Boundary Conditions.
-RHSH(1) = GelSimParams.HydFluxL + bndterms(1);
+RHSH(1) = GelSimParams.HydFluxL + GelSimParams.SolValL*GelSimParams.HydExchangeRate*bndterms(3);
 RHSH(end) = GelSimParams.HydValR;
 
 
@@ -83,7 +83,7 @@ RHSB(2:end-1) = conccur(2:end-1) + dt*explcur;
     
 %Now we need to populate the entries which correspond to ghost cells with
 %the appropriate fluxes for Boundary Conditions.
-RHSB(1) = GelSimParams.BicFluxL + bndterms(2);
+RHSB(1) = GelSimParams.BicFluxL + GelSimParams.SolValL*GelSimParams.BicExchangeRate*bndterms(4);
 RHSB(end) = GelSimParams.BicValR;
 
 
@@ -109,7 +109,7 @@ RHSI(2:end-1) = conccur(2:end-1) + dt*explcur;
 
 %Now we need to populate the entries which correspond to ghost cells with
 %the appropriate fluxes for Boundary Conditions.
-RHSI(1) = GelSimParams.IonFluxL + bndterms(3);
+RHSI(1) = GelSimParams.IonFluxL + GelSimParams.SolValL*GelSimParams.HydExchangeRate*GelSimParams.HydExchangerParam*bndterms(1);
 RHSI(end) = GelSimParams.IonValR;
 
 
@@ -136,7 +136,7 @@ RHSA(2:end-1) = conccur(2:end-1) + dt*explcur;
 
 %Now we need to populate the entries which correspond to ghost cells with
 %the appropriate fluxes for Boundary Conditions.
-RHSA(1) = GelSimParams.AniFluxL + bndterms(4);
+RHSA(1) = GelSimParams.AniFluxL + GelSimParams.SolValL*GelSimParams.BicExchangeRate*GelSimParams.BicExchangerParam*bndterms(2);
 RHSA(end) = GelSimParams.AniValR;
 
 

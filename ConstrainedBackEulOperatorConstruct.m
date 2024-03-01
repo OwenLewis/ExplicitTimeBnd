@@ -46,13 +46,13 @@ D = DiffCoeff;
 
 
 %First, lets get the SBD2 Time Step operators for each species
-Lfut1 = BackEulOperatorConstruct(D(1),dt,0);
+Lfut1 = BackEulOperatorConstruct(D(1),dt,-GelSimParams.HydExchangeRate*GelSimParams.HydExchangerParam);
 %  -GelSimParams.HydExchangeRate*GelSimParams.HydExchangerParam
-Lfut2 = BackEulOperatorConstruct(D(2),dt,0);
+Lfut2 = BackEulOperatorConstruct(D(2),dt,-GelSimParams.BicExchangeRate*GelSimParams.BicExchangerParam);
 % -GelSimParams.BicExchangeRate*GelSimParams.BicExchangerParam
-Lfut3 = BackEulOperatorConstruct(D(3),dt,0);
+Lfut3 = BackEulOperatorConstruct(D(3),dt,-GelSimParams.HydExchangeRate);
 % -GelSimParams.HydExchangeRate
-Lfut4 = BackEulOperatorConstruct(D(4),dt,0);
+Lfut4 = BackEulOperatorConstruct(D(4),dt,-GelSimParams.BicExchangeRate);
 % -GelSimParams.BicExchangeRate
 
 %Now we'll construct the first diff. operators which act on the electric 
@@ -187,9 +187,7 @@ AtoB = A;
 
 
 Lfut = [Lfut1+HydAdj,A,A,A,Dfut1;A,Lfut2+BicAdj,A,A,Dfut2;A,A,Lfut3,A,Dfut3;A,A,A,Lfut4,Dfut4;Eye1,Eye2,Eye3,Eye4,B];
-bndterms = [GelSimParams.HydExchangeRate*GelSimParams.HydExchangerParam*HydBndFut;...
-            GelSimParams.BicExchangeRate*GelSimParams.BicExchangerParam*BicBndFut;...
-            GelSimParams.HydExchangeRate*IonBndFut;GelSimParams.BicExchangeRate*AniBndFut];
+bndterms = [HydBndFut;BicBndFut;IonBndFut;AniBndFut];
 
 
 end
