@@ -61,7 +61,7 @@ Lfut4 = BackEulOperatorConstruct(D(4),dt,-GelSimParams.BicExchangeRate);
 %First, the action of electric potential on hydrogen
 %Operator requires an approx of future concentration
 FutConcExtrap = 2*GelState.Hconc - GelState.Hold; %Heres an extrap to next time step
-HydBndFut = mean(FutConcExtrap(1:2)); %This will be necessary for ion exchanger evaluation
+HydBndFut = mean(GelState.Hconc(1:2)); %This will be necessary for ion exchanger evaluation
 
 %Lets set asside the diagonal of the new operator that takes care of the
 %buffering reaction implicitly. 
@@ -90,7 +90,7 @@ Dfut1(end,:) = Dfut1(end,:)*mean(GelState.ThetaS(end-1:end));
 %Now on species two
 %Operator requires an approx of future concentration
 FutConcExtrap = 2*GelState.Bconc - GelState.Bold; %Heres an extrap to next time step
-BicBndFut = mean(FutConcExtrap(1:2)); %This will be necessary for ion exchanger evaluation
+BicBndFut = mean(GelState.Bconc(1:2)); %This will be necessary for ion exchanger evaluation
 
 %Lets set asside the diagonal of the new operator that takes care of the
 %buffering reaction implicitly. 
@@ -118,7 +118,7 @@ Dfut2(end,:) = Dfut2(end,:)*mean(GelState.ThetaS(end-1:end));
 %Now on species three
 %Operator requires an approx of future concentration
 FutConcExtrap = 2*GelState.Iconc - GelState.Iold; %Heres an extrap to next time step
-IonBndFut = mean(FutConcExtrap(1:2)); %This will be necessary for ion exchanger evaluation
+IonBndFut = mean(GelState.Iconc(1:2)); %This will be necessary for ion exchanger evaluation
 
 %Now we interpolate the concentration times valence times volume fraction
 %to cell edges
@@ -139,7 +139,7 @@ Dfut3(end,:) = Dfut3(end,:)*mean(GelState.ThetaS(end-1:end));
 %Now species four
 %Operator requires an approx of future concentration
 FutConcExtrap = 2*GelState.Aconc - GelState.Aold; %Heres an extrap to next time step
-AniBndFut = mean(FutConcExtrap(1:2)); %This will be necessary for ion exchanger evaluation
+AniBndFut = mean(GelState.Aconc(1:2)); %This will be necessary for ion exchanger evaluation
 
 %Now we interpolate the concentration times valence times volume fraction
 %to cell edges
